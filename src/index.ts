@@ -1,32 +1,22 @@
-const fs = require("fs");
-const path = require("path");
-const { TextDocument } = require("vscode-languageserver");
-const {
-  VueInterpolationMode
-} = require("vue-language-server/dist/modes/template/interpolationMode");
-const {
-  getJavascriptMode
-} = require("vue-language-server/dist/modes/script/javascript");
-const {
-  getServiceHost
-} = require("vue-language-server/dist/services/typescriptService/serviceHost");
-const {
-  getLanguageModelCache
-} = require("vue-language-server/dist/embeddedSupport/languageModelCache");
-const {
-  getVueDocumentRegions
-} = require("vue-language-server/dist/embeddedSupport/embeddedSupport");
-const tsModule = require("typescript");
-const { getLines, formatLine, formatCursor } = require("./print");
+import * as fs from "fs";
+import * as path from "path";
+import { TextDocument, Diagnostic } from "vscode-languageserver";
+import { VueInterpolationMode } from "vue-language-server/dist/modes/template/interpolationMode";
+import { getJavascriptMode } from "vue-language-server/dist/modes/script/javascript";
+import { getServiceHost } from "vue-language-server/dist/services/typescriptService/serviceHost";
+import { getLanguageModelCache } from "vue-language-server/dist/embeddedSupport/languageModelCache";
+import { getVueDocumentRegions } from "vue-language-server/dist/embeddedSupport/embeddedSupport";
+import tsModule from "typescript";
+import { getLines, formatLine, formatCursor } from "./print";
 
 const workspace = "/home/yanzhen/workspace/fisheye";
 //FIXME: hardcode src
 const srcDir = path.resolve(workspace, "src");
 
-function traverse(root) {
-  const docs = [];
+function traverse(root: string) {
+  const docs: TextDocument[] = [];
 
-  function walk(dir) {
+  function walk(dir: string) {
     fs.readdirSync(dir).forEach(p => {
       const joinedP = path.join(dir, p);
       const stats = fs.statSync(joinedP);
@@ -69,17 +59,16 @@ const docs = traverse(srcDir);
     const vueMode = new VueInterpolationMode(tsModule, serviceHost);
     const scriptMode = await getJavascriptMode(
       serviceHost,
-      scriptRegionDocuments,
+      scriptRegionDocuments as any,
       workspace
     );
     let done = 0;
     for (const doc of docs) {
-      console.time("vue tpl");
       const vueTplResults = vueMode.doValidation(doc);
-      console.timeEnd("vue tpl");
-      console.time("script");
-      const scriptResults = scriptMode.doValidation(doc);
-      console.timeEnd("script");
+      let scriptResults: Diagnostic[] = [];
+      if (scriptMode.doValidation) {
+        scriptResults = scriptMode.doValidation(doc);
+      }
       const results = vueTplResults.concat(scriptResults);
       done++;
       if (results.length) {

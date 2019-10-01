@@ -4,12 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "tsc -p .",
+    "watch": "tsc --watch",
+    "typings": "tsc -d --emitDeclarationOnly --declarationDir typings",
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "files": [
+    "dist",
+    "typings"
+  ],
+  "typings": "typings/index.d.ts",
   "dependencies": {
+    "@types/eslint": "^6.1.1",
+    "@types/prettier": "^1.18.2",
     "typescript": "^3.6.3",
     "vscode-languageserver": "^5.2.1",
     "vue-language-server": "0.0.61"
