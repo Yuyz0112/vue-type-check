@@ -7,11 +7,34 @@ import { getServiceHost } from "vue-language-server/dist/services/typescriptServ
 import { getLanguageModelCache } from "vue-language-server/dist/embeddedSupport/languageModelCache";
 import { getVueDocumentRegions } from "vue-language-server/dist/embeddedSupport/embeddedSupport";
 import tsModule from "typescript";
-import { getLines, formatLine, formatCursor } from "./print";
+import ProgressBar from "progress";
+import {
+  getLines,
+  formatLine,
+  formatCursor,
+  printError,
+  printMessage,
+  printLog
+} from "./print";
 
-const workspace = "/home/yanzhen/workspace/fisheye";
-//FIXME: hardcode src
-const srcDir = path.resolve(workspace, "src");
+interface Options {
+  workspace: string;
+  srcDir?: string;
+  onlyTemplate?: boolean;
+}
+
+interface Source {
+  docs: TextDocument[];
+  workspace: string;
+  onlyTemplate: boolean;
+}
+
+export async function check(options: Options) {
+  const { workspace, onlyTemplate = false } = options;
+  const srcDir = options.srcDir || options.workspace;
+  const docs = traverse(srcDir);
+  await getDiagnostics({ docs, workspace, onlyTemplate });
+}
 
 function traverse(root: string) {
   const docs: TextDocument[] = [];
@@ -39,9 +62,7 @@ function traverse(root: string) {
   return docs;
 }
 
-const docs = traverse(srcDir);
-
-(async () => {
+async function getDiagnostics({ docs, workspace, onlyTemplate }: Source) {
   const documentRegions = getLanguageModelCache(10, 60, document =>
     getVueDocumentRegions(document)
   );
@@ -62,15 +83,18 @@ const docs = traverse(srcDir);
       scriptRegionDocuments as any,
       workspace
     );
-    let done = 0;
+    const bar = new ProgressBar("checking [:bar] :current/:total", {
+      total: docs.length,
+      width: 20,
+      clear: true
+    });
     for (const doc of docs) {
       const vueTplResults = vueMode.doValidation(doc);
       let scriptResults: Diagnostic[] = [];
-      if (scriptMode.doValidation) {
+      if (!onlyTemplate && scriptMode.doValidation) {
         scriptResults = scriptMode.doValidation(doc);
       }
       const results = vueTplResults.concat(scriptResults);
-      done++;
       if (results.length) {
         hasError = true;
         for (const result of results) {
@@ -80,8 +104,10 @@ const docs = traverse(srcDir);
             end: result.range.end.line,
             total
           });
-          console.log(`Error in ${doc.uri}`);
-          console.log(result.message);
+          printError(`Error in ${doc.uri}`);
+          printMessage(
+            `${result.range.start.line}:${result.range.start.character} ${result.message}`
+          );
           for (const line of lines) {
             const code = doc
               .getText({
@@ -90,14 +116,14 @@ const docs = traverse(srcDir);
               })
               .replace(/\n$/, "");
             const isError = line === result.range.start.line;
-            console.log(formatLine({ number: line, code, isError }));
+            printLog(formatLine({ number: line, code, isError }));
             if (isError) {
-              console.log(formatCursor(result.range));
+              printLog(formatCursor(result.range));
             }
           }
         }
       }
-      console.log(`${done}/${docs.length}`);
+      bar.tick();
     }
   } catch (error) {
     hasError = true;
@@ -107,4 +133,4 @@ const docs = traverse(srcDir);
     scriptRegionDocuments.dispose();
     process.exit(hasError ? 1 : 0);
   }
-})();
+}

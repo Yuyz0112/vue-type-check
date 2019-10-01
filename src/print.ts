@@ -1,4 +1,5 @@
 import { Range } from "vscode-languageserver";
+import chalk from "chalk";
 
 interface Lines {
   start: number;
@@ -28,7 +29,7 @@ export function getLines({ start, end, total }: Lines) {
 export function formatLine({ number, code, isError, isCursor }: RawLine) {
   const length = String(number).length;
   return [
-    isError ? ">" : " ",
+    isError ? chalk.red(">") : " ",
     isCursor ? " ".repeat(length) : number,
     "|",
     code
@@ -43,12 +44,18 @@ export function formatCursor(range: Range) {
     number: range.start.line,
     isCursor: true,
     isError: false,
-    code: " ".repeat(range.start.character) + "^".repeat(length)
+    code: " ".repeat(range.start.character) + chalk.red("^").repeat(length)
   });
 }
 
-module.exports = {
-  getLines,
-  formatLine,
-  formatCursor
-};
+export function printError(msg: string) {
+  return console.log(chalk.red(msg));
+}
+
+export function printMessage(msg: string) {
+  return console.log(chalk.gray(msg));
+}
+
+export function printLog(msg: string) {
+  return console.log(msg);
+}
