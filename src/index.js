@@ -5,6 +5,9 @@ const {
   VueInterpolationMode
 } = require("vue-language-server/dist/modes/template/interpolationMode");
 const {
+  getJavascriptMode
+} = require("vue-language-server/dist/modes/script/javascript");
+const {
   getServiceHost
 } = require("vue-language-server/dist/services/typescriptService/serviceHost");
 const {
@@ -56,16 +59,31 @@ const docs = traverse(srcDir);
     const vueDocument = documentRegions.refreshAndGet(document);
     return vueDocument.getSingleTypeDocument("script");
   });
+  let hasError = false;
   try {
     const serviceHost = getServiceHost(
       tsModule,
       workspace,
       scriptRegionDocuments
     );
-    const mode = new VueInterpolationMode(tsModule, serviceHost);
+    const vueMode = new VueInterpolationMode(tsModule, serviceHost);
+    const scriptMode = await getJavascriptMode(
+      serviceHost,
+      scriptRegionDocuments,
+      workspace
+    );
+    let done = 0;
     for (const doc of docs) {
-      const results = mode.doValidation(doc);
+      console.time("vue tpl");
+      const vueTplResults = vueMode.doValidation(doc);
+      console.timeEnd("vue tpl");
+      console.time("script");
+      const scriptResults = scriptMode.doValidation(doc);
+      console.timeEnd("script");
+      const results = vueTplResults.concat(scriptResults);
+      done++;
       if (results.length) {
+        hasError = true;
         for (const result of results) {
           const total = doc.lineCount;
           const lines = getLines({
@@ -89,14 +107,15 @@ const docs = traverse(srcDir);
             }
           }
         }
-      } else {
-        console.log(`No error found in ${doc.uri}`);
       }
+      console.log(`${done}/${docs.length}`);
     }
   } catch (error) {
+    hasError = true;
     console.error(error);
   } finally {
     documentRegions.dispose();
     scriptRegionDocuments.dispose();
+    process.exit(hasError ? 1 : 0);
   }
 })();
