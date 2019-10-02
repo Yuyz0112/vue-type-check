@@ -1,18 +1,30 @@
 {
-  "name": "vetur-cli",
+  "name": "vue-type-check",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "bin": "dist/cli.js",
+  "description": "a type checker for typescript written Vue components",
+  "main": "dist/index.js",
+  "bin": {
+    "vue-type-check": "dist/cli.js",
+    "vtc": "dist/cli.js"
+  },
   "scripts": {
     "compile": "tsc -p .",
     "watch": "tsc --watch",
     "typings": "tsc -d --emitDeclarationOnly --declarationDir typings",
     "start": "node dist/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Yuyz0112/vue-type-check.git"
+  },
+  "keywords": [
+    "vue",
+    "typescript",
+    "types",
+    "vetur"
+  ],
+  "author": "yanzhen@smartx.com",
+  "license": "MIT",
   "files": [
     "dist",
     "typings"
