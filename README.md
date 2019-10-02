@@ -23,7 +23,7 @@ Install: npm i -g vue-type-check
 Usage: vue-type-check or vtc
 Options:
   --workspace        path to your workspace, required
-  --srcDir           path to the folder which contains your Vue components, will fallback to workspace when not passed
+  --srcDir           path to the folder which contains your Vue components, will fallback to the workspace when not passed
   --onlyTemplate     whether to check the script code in a single file component
 ```
 
@@ -59,7 +59,7 @@ export default Vue.extend({
 
 ![example.gif](https://raw.githubusercontent.com/Yuyz0112/vue-type-check/master/assets/vtc.gif)
 
-### Programmatically API
+### Programmatical API
 
 ```js
 const { check } = require("vue-type-check");
@@ -75,4 +75,6 @@ const { check } = require("vue-type-check");
 
 ## How it works
 
-Currently the implementation is heavily based on vetur's awesome [Interpolation feature](https://vuejs.github.io/vetur/interpolation.html).
+Currently, the implementation is heavily based on vetur's awesome [interpolation feature](https://vuejs.github.io/vetur/interpolation.html).
+
+If you are interested in the design decisions and the attempts on other approaches, they can be found in [this post](http://www.myriptide.com/vue-type-check/).
