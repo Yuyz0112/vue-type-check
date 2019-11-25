@@ -42,5 +42,8 @@
     "typescript": "^3.6.3",
     "vscode-languageserver": "^5.2.1",
     "vue-language-server": "0.0.61"
+  },
+  "devDependencies": {
+    "vue": "^2.6.10"
   }
 }
