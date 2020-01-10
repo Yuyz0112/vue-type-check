@@ -13,6 +13,9 @@ export default Vue.extend({
     return {
       items: [{ value: 1 }, { value: 2 }]
     };
+  },
+  methods() {
+    console.log(this.items.value);
   }
 });
 </script>

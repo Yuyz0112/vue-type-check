@@ -18,4 +18,16 @@ exec(`node ${bin} --workspace ${fixtureDir}`, (err, stdout) => {
   4 | </template>
 `)
   );
+
+  assert.ok(
+    stdout.includes(`
+17:27 Property 'value' does not exist on type '{ value: number; }[]'. Did you mean 'values'?
+  15 |   },
+  16 |   methods() {
+> 17 |     console.log(this.items.value);
+     |                            ^^^^^
+  18 |   }
+  19 | });
+`)
+  );
 });
