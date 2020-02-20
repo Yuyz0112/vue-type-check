@@ -21,6 +21,7 @@ interface Options {
   workspace: string;
   srcDir?: string;
   onlyTemplate?: boolean;
+  files?: string[];
 }
 
 interface Source {
@@ -30,9 +31,21 @@ interface Source {
 }
 
 export async function check(options: Options) {
-  const { workspace, onlyTemplate = false } = options;
+  const { workspace, onlyTemplate = false, files } = options;
   const srcDir = options.srcDir || options.workspace;
-  const docs = traverse(srcDir);
+  let docs: TextDocument[] = [];
+  if (files) {
+    docs.push(...files.filter((file) => path.extname(file) === ".vue")
+      .map((file) => TextDocument.create(
+        `file://${file}`,
+        "vue",
+        0,
+        fs.readFileSync(file, "utf8")
+      ))
+    );
+  } else {
+    docs = traverse(srcDir);
+  }
   await getDiagnostics({ docs, workspace, onlyTemplate });
 }
 

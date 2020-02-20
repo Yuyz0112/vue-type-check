@@ -3,7 +3,7 @@ import * as path from "path";
 import minimist from "minimist";
 import { check } from "./index";
 
-const { workspace, srcDir, onlyTemplate } = minimist(process.argv.slice(2));
+const { workspace, srcDir, onlyTemplate, _ } = minimist(process.argv.slice(2));
 
 if (!workspace) {
   throw new Error("--workspace is required");
@@ -14,5 +14,6 @@ const cwd = process.cwd();
 check({
   workspace: path.resolve(cwd, workspace),
   srcDir: srcDir && path.resolve(cwd, srcDir),
-  onlyTemplate
+  onlyTemplate,
+  files: _
 });
