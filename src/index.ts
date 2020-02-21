@@ -31,10 +31,10 @@ interface Source {
 }
 
 export async function check(options: Options) {
-  const { workspace, onlyTemplate = false, files } = options;
+  const { workspace, onlyTemplate = false, files = [] } = options;
   const srcDir = options.srcDir || options.workspace;
   let docs: TextDocument[] = [];
-  if (files) {
+  if (files.length) {
     docs.push(...files.filter((file) => path.extname(file) === ".vue")
       .map((file) => TextDocument.create(
         `file://${file}`,
