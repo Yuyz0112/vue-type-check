@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import * as path from "path";
 import { TextDocument, Diagnostic } from "vscode-languageserver";
 import { VueInterpolationMode } from "vue-language-server/dist/modes/template/interpolationMode";
@@ -14,13 +13,16 @@ import {
   formatCursor,
   printError,
   printMessage,
-  printLog
+  printLog,
 } from "./print";
+import { globSync, readFile, extractTargetFileExtension } from "./file-util";
 
 interface Options {
   workspace: string;
   srcDir?: string;
   onlyTemplate?: boolean;
+  onlyTypeScript?: boolean;
+  excludeDir?: string|string[];
 }
 
 interface Source {
@@ -29,44 +31,71 @@ interface Source {
   onlyTemplate: boolean;
 }
 
+let validLanguages = ["vue"];
+
 export async function check(options: Options) {
-  const { workspace, onlyTemplate = false } = options;
+  const { workspace, onlyTemplate = false, onlyTypeScript = false, excludeDir } = options;
+  if (onlyTypeScript) {
+    validLanguages = ["ts", "tsx", "vue"];
+  }
   const srcDir = options.srcDir || options.workspace;
-  const docs = traverse(srcDir);
+  const excludeDirs = typeof excludeDir === "string" ? [excludeDir] : excludeDir;
+  const docs = await traverse(srcDir, onlyTypeScript, excludeDirs);
+
   await getDiagnostics({ docs, workspace, onlyTemplate });
 }
 
-function traverse(root: string) {
-  const docs: TextDocument[] = [];
+async function traverse(
+  root: string,
+  onlyTypeScript: boolean,
+  excludeDirs?: string[]
+): Promise<TextDocument[]> {
+  let targetFiles = globSync(
+    path.join(
+      root,
+      onlyTypeScript ? `**/*.{${validLanguages.join(",")}}` : "**/*.vue"
+    )
+  );
 
-  function walk(dir: string) {
-    fs.readdirSync(dir).forEach(p => {
-      const joinedP = path.join(dir, p);
-      const stats = fs.statSync(joinedP);
-      if (stats.isDirectory()) {
-        walk(joinedP);
-      } else if (path.extname(p) === ".vue") {
-        docs.push(
-          TextDocument.create(
-            `file://${joinedP}`,
-            "vue",
-            0,
-            fs.readFileSync(joinedP, "utf8")
-          )
-        );
+  if (excludeDirs) {
+    const filterTargets = excludeDirs.map((dir) => path.resolve(dir)).join("|");
+    targetFiles = targetFiles.filter((targetFile) =>
+      !new RegExp(`^(?:${filterTargets}).*$`).test(targetFile)
+    );
+  }
+
+  let files = await Promise.all(
+    targetFiles.map(async (absFilePath) => {
+      const src = await readFile(absFilePath);
+      return {
+        absFilePath,
+        fileExt: extractTargetFileExtension(absFilePath) as string,
+        src,
+      };
+    })
+  );
+
+  if (onlyTypeScript) {
+    files = files.filter(({ src, fileExt }) => {
+      if (fileExt !== "vue" || !hasScriptTag(src)) {
+        return true;
       }
+      return isTs(src) || isImportOtherTs(src);
     });
   }
 
-  walk(root);
+  const docs = files.map(({ absFilePath, src, fileExt }) =>
+    TextDocument.create(`file://${absFilePath}`, fileExt, 0, src)
+  );
+
   return docs;
 }
 
 async function getDiagnostics({ docs, workspace, onlyTemplate }: Source) {
-  const documentRegions = getLanguageModelCache(10, 60, document =>
+  const documentRegions = getLanguageModelCache(10, 60, (document) =>
     getVueDocumentRegions(document)
   );
-  const scriptRegionDocuments = getLanguageModelCache(10, 60, document => {
+  const scriptRegionDocuments = getLanguageModelCache(10, 60, (document) => {
     const vueDocument = documentRegions.refreshAndGet(document);
     return vueDocument.getSingleTypeDocument("script");
   });
@@ -86,7 +115,7 @@ async function getDiagnostics({ docs, workspace, onlyTemplate }: Source) {
     const bar = new ProgressBar("checking [:bar] :current/:total", {
       total: docs.length,
       width: 20,
-      clear: true
+      clear: true,
     });
     for (const doc of docs) {
       const vueTplResults = vueMode.doValidation(doc);
@@ -102,7 +131,7 @@ async function getDiagnostics({ docs, workspace, onlyTemplate }: Source) {
           const lines = getLines({
             start: result.range.start.line,
             end: result.range.end.line,
-            total
+            total,
           });
           printError(`Error in ${doc.uri}`);
           printMessage(
@@ -112,7 +141,7 @@ async function getDiagnostics({ docs, workspace, onlyTemplate }: Source) {
             const code = doc
               .getText({
                 start: { line, character: 0 },
-                end: { line, character: Infinity }
+                end: { line, character: Infinity },
               })
               .replace(/\n$/, "");
             const isError = line === result.range.start.line;
@@ -133,4 +162,16 @@ async function getDiagnostics({ docs, workspace, onlyTemplate }: Source) {
     scriptRegionDocuments.dispose();
     process.exit(hasError ? 1 : 0);
   }
+}
+
+function hasScriptTag(src: string) {
+  return /.*\<script.*\>/.test(src);
+}
+
+function isTs(src: string) {
+  return /.*\<script.*lang="tsx?".*\>/.test(src);
+}
+
+function isImportOtherTs(src: string) {
+  return /.*\<script.*src=".*".*\>/.test(src);
 }
