@@ -5,7 +5,7 @@ const { exec } = require("child_process");
 const bin = path.resolve(__dirname, "../dist/cli.js");
 const fixtureDir = path.resolve(__dirname, "./fixture");
 
-exec(`node ${bin} --workspace ${fixtureDir}`, (err, stdout) => {
+const spec = (err, stdout) => {
   assert.equal(Boolean(err), true);
   assert.ok(
     stdout.includes(`/ComponentOne.vue
@@ -30,4 +30,13 @@ exec(`node ${bin} --workspace ${fixtureDir}`, (err, stdout) => {
   19 | });
 `)
   );
+}
+
+exec(`node ${bin} --workspace ${fixtureDir}`, spec);
+exec(`node ${bin} --workspace ${fixtureDir} --onlyTypeScript`, spec);
+exec(`node ${bin} --workspace ${fixtureDir} --excludeDir ./`, (err, stdout) => {
+  assert.equal(Boolean(err), false);
+});
+exec(`node ${bin} --workspace ${fixtureDir} --excludeDir ./ --excludeDir ./tests`, (err, stdout) => {
+  assert.equal(Boolean(err), false);
 });
