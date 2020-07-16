@@ -68,7 +68,9 @@ const { check } = require("vue-type-check");
   await check({
     workspace: PATH_TO_WORKSPACE,
     srcDir: PATH_TO_SRC_DIR,
-    onlyTemplate: TRUE_OR_FALSE
+    excludeDir: PATH_TO_EXCLUDE_DIR,
+    onlyTemplate: TRUE_OR_FALSE,
+    onlyTypeScript: TRUE_OR_FALSE
   });
 })();
 ```
