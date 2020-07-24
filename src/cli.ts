@@ -9,18 +9,15 @@ const {
   onlyTemplate,
   onlyTypeScript,
   excludeDir,
+  _,
 } = minimist(process.argv.slice(2));
-
-if (!workspace) {
-  throw new Error("--workspace is required");
-}
-
 const cwd = process.cwd();
 
 check({
-  workspace: path.resolve(cwd, workspace),
+  workspace: path.resolve(cwd, workspace || "."),
   srcDir: srcDir && path.resolve(cwd, srcDir),
   onlyTemplate,
   onlyTypeScript,
   excludeDir,
+  files: _,
 });
