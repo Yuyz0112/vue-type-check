@@ -1,5 +1,7 @@
 import * as path from "path";
-import { TextDocument, Diagnostic } from "vscode-languageserver";
+import {  Diagnostic } from "vscode-languageserver";
+import { TextDocument } from "vscode-languageserver-textdocument";
+
 import { VueInterpolationMode } from "vue-language-server/dist/modes/template/interpolationMode";
 import { getJavascriptMode } from "vue-language-server/dist/modes/script/javascript";
 import { getServiceHost } from "vue-language-server/dist/services/typescriptService/serviceHost";
