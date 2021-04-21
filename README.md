@@ -77,6 +77,6 @@ const { check } = require("vue-type-check");
 
 ## How it works
 
-Currently, the implementation is heavily based on vetur's awesome [interpolation feature](https://vuejs.github.io/vetur/interpolation.html).
+Currently, the implementation is heavily based on vetur's awesome [interpolation feature](https://vuejs.github.io/vetur/guide/interpolation.html).
 
 If you are interested in the design decisions and the attempts on other approaches, they can be found in [this post](http://www.myriptide.com/vue-type-check/).
