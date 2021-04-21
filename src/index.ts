@@ -7,6 +7,8 @@ import { getLanguageModelCache } from "vue-language-server/dist/embeddedSupport/
 import { getVueDocumentRegions } from "vue-language-server/dist/embeddedSupport/embeddedSupport";
 import tsModule from "typescript";
 import ProgressBar from "progress";
+import * as fs from "fs"
+
 import {
   getLines,
   formatLine,
@@ -22,6 +24,7 @@ interface Options {
   srcDir?: string;
   onlyTemplate?: boolean;
   onlyTypeScript?: boolean;
+  files?: string[];
   excludeDir?: string|string[];
 }
 
@@ -34,14 +37,25 @@ interface Source {
 let validLanguages = ["vue"];
 
 export async function check(options: Options) {
-  const { workspace, onlyTemplate = false, onlyTypeScript = false, excludeDir } = options;
+  const { workspace, onlyTemplate = false, onlyTypeScript = false, excludeDir, files = [] } = options;
   if (onlyTypeScript) {
     validLanguages = ["ts", "tsx", "vue"];
   }
   const srcDir = options.srcDir || options.workspace;
   const excludeDirs = typeof excludeDir === "string" ? [excludeDir] : excludeDir;
-  const docs = await traverse(srcDir, onlyTypeScript, excludeDirs);
-
+  let docs: TextDocument[] = [];
+  if (files.length) {
+    docs.push(...files.filter((file) => path.extname(file) === ".vue")
+      .map((file) => TextDocument.create(
+        `file://${file}`,
+        "vue",
+        0,
+        fs.readFileSync(file, "utf8")
+      ))
+    );
+  } else {
+    docs = await traverse(srcDir, onlyTypeScript, excludeDirs);
+  }
   await getDiagnostics({ docs, workspace, onlyTemplate });
 }
 

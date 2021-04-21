@@ -8,6 +8,7 @@
     "vtc": "dist/cli.js"
   },
   "scripts": {
+    "prepare": "npm run compile",
     "compile": "tsc -p .",
     "watch": "tsc --watch",
     "typings": "tsc -d --emitDeclarationOnly --declarationDir typings",
