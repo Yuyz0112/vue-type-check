@@ -49,6 +49,7 @@
     "@types/prettier": "^2.0.2",
     "@types/progress": "^2.0.3",
     "typescript": "^3.9.6",
+    "vscode-languageserver-textdocument": "^1.0.1",
     "vue": "^2.6.10"
   }
 }
